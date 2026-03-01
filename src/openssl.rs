@@ -1,6 +1,7 @@
 use crate::aes;
 use crate::common::DecryptError;
 use log::warn;
+use sha2::Digest;
 
 /// The type of hash to use when generating a key/iv pair from a passphrase
 #[derive(Clone, Debug)]
@@ -24,8 +25,7 @@ struct OpenSSLCryptInfo {
 
 /// Returns the SHA256 hash of the provided data
 fn sha256_digest(data: &[u8]) -> Vec<u8> {
-    // This *should* never fail
-    hex::decode(sha256::digest(data)).expect("Failed to decode SHA256 hash")
+    sha2::Sha256::digest(data).to_vec()
 }
 
 /// Returns the MD5 hash of the provided data
