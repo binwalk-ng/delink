@@ -104,7 +104,10 @@ pub fn decrypt(encrypted_data: &[u8]) -> Result<Vec<u8>, DecryptError> {
                                                         .get(cipher_data_start..cipher_data_end)
                                                     {
                                                         None => {
-                                                            debug!("Failed to read encrypted data [{:#X} - {:#X}]", cipher_data_start, cipher_data_end);
+                                                            debug!(
+                                                                "Failed to read encrypted data [{:#X} - {:#X}]",
+                                                                cipher_data_start, cipher_data_end
+                                                            );
                                                             return Err(DecryptError::Input);
                                                         }
                                                         Some(block_data) => {
