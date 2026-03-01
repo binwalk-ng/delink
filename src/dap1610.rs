@@ -1,5 +1,5 @@
 use crate::common::DecryptError;
-use crate::openssl::{aes_256_cbc_decrypt, MessageDigest};
+use crate::openssl::{MessageDigest, aes_256_cbc_decrypt};
 use log::debug;
 
 /// Decrypt DAP-1610 B1 firmware
