@@ -11,7 +11,7 @@ use log::trace;
 /// Attempts to decrypt the provided data using all decryptors
 pub fn decrypt(encrypted_data: &[u8]) -> Result<Vec<u8>, DecryptError> {
     // List of supported decryptors
-    let decryptors: Vec<(&str, DecryptorFunction)> = vec![
+    const DECRYPTORS: &[(&str, DecryptorFunction)] = &[
         ("shrs", shrs::decrypt),
         ("mh01", mh01::decrypt),
         ("dlk", dlk::decrypt),
@@ -22,9 +22,9 @@ pub fn decrypt(encrypted_data: &[u8]) -> Result<Vec<u8>, DecryptError> {
     ];
 
     // Try each decryptor until one works
-    for (name, decryptor) in decryptors {
+    for &(name, decryptor) in DECRYPTORS {
         trace!("Trying decryptor: {}", name);
-        if let Ok(decrypted_data) = (decryptor)(encrypted_data) {
+        if let Ok(decrypted_data) = decryptor(encrypted_data) {
             return Ok(decrypted_data);
         }
     }
