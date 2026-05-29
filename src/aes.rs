@@ -25,7 +25,7 @@ fn decrypt_unpadded<M: BlockModeDecrypt>(
     decryptor: M,
     encrypted_data: &[u8],
 ) -> Result<Vec<u8>, DecryptError> {
-    if encrypted_data.len() % 16 != 0 {
+    if !encrypted_data.len().is_multiple_of(16) {
         return Err(DecryptError::InvalidInputLength);
     }
 
