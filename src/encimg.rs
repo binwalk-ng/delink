@@ -142,18 +142,33 @@ pub fn keygen(image_sign: &[u8]) -> Vec<EncimgKey> {
     // List of known prog_board_fw strings from various encimg releases.
     // Multiple devices may use the same prog_board_fw string.
     let prog_board_fws: Vec<Vec<u8>> = vec![
-        // DAP-1665
+        // Device(s): DAP-1665
+        // Firmware:  DAP-1665 Rev B v2.03B02, DAP-1665 B1 v2.06b01, DAP1665 FW202WWb05 / FW203WWb02 / FW203WWb03
         b"5gHW13MScSB4Xqqr8Mg8xl0zlQXCfykXEfCHXytwsC6F0zsedwZc+9vDbCjE3ge4Ts0682B35XQG\nP2tuxxuLMlvCJ266ZlnggPy917jwESpnfXmMiZRNcSviifjxTlg".to_vec(),
-        // DIR-850L A1
+        // Device(s): DIR-850L A1
+        // Firmware:  DIR-850L Rev A v1.21B06 / v1.21B07, DIR850LA1 FW115WWb04 / FW120WWb03 / FW121WWb06 / FW121WWb07
         b"vzoLuJSCIFc3UwLZ6Is4Tyu95dFg9MssBIuS1CVMEQG+0pUeE99jnR+vLlLd9unrlvhwEvRdn99R\nEYmbe6y0HeABq/NtIXwf3+odwHhmJL1ceW16UsU3xgR7QH0CO9c".to_vec(),
-        // DIR-850L B1
+        // Device(s): DIR-850L B1
+        // Firmware:  DIR-850L Rev B v2.20B03 / v2.22B02, DIR850LB1 FW210WWb03 / FW220WWb03 / FW222WWb02
         b"k5NI1+bvWEfZ6ohtpUOwynOdUcivqwEZqQehHMEmEPQ5izL+cabn8bNHZXHjkp6WCl9yn9CIkiI1\nmTFu21TEEPo66JBFv9BMmb+IKQgnO8OuF4bz4frGPdN67gYLuOs".to_vec(),
-        // DAP-2610
+        // Device(s): DAP-2610, DAP-2680, DAP-2682 (shared seed)
+        // Firmware:  DAP-2680 Rev A v2.00.044, DAP2680 v100-rc011, DAP-2682 Rev A v1.00R022, DAP2682 v100-r022
         b"db6zOuf7GJWGI64bm0DXpZ1rn4hFmPTxoVhq0hvXHdfaGFLdubM4/QvuVHdKee7vh6tC/sBL2t8h\n9GtlNghPDnf9wPrYOLk0BO5nlYankuVBe4sWaltHEHh7NToCSdq".to_vec(),
-        // DIR-822
+        // Device(s): DIR-822 C1
+        // Firmware:  DIR-822 Rev C v3.12B04 / v3.15B02, DIR822C1 FW303WWb04 / FW312WWb04 / FW315WWb02
         b"2q02Oz+DDDKjLmMENiZN+3M8VucG4rYfKNpsEntCcsep1jdFIs3wnXySKRGNCGmfzYHzJEPD3GbX\ne/AF4zbvpjuPlmq58fHuph587JdKHrtAUlrli4/FkiKXBfDFbn2".to_vec(),
-        // DIR-842
+        // Device(s): DIR-842 C1
+        // Firmware:  DIR-842 Rev C v3.11B05 / v3.12B01 / v3.13B05 / v3.13B10, DIR842C1 FW311b05 / FW312WWb01 / FW313WWb05 / FW313betab10
         b"XYWFilP+ZyydvsXAJSgKeF/p15q05g68xQYoRZeD726UAbRb846kO7TeNw8eZa6ucKxYrhxNbzjP\nbpgFJ7Yxa6sBeujdJ7fzufEbNF3kUafxFiESBRQI6qQbszYOvJI".to_vec(),
+        // Device(s): DIR-880L
+        // Firmware:  DIR-880L Rev A v1.08b06
+        b"zUKwzudh76LnvKn9ZuU7iCEKLn4AyZTzFA83N1HdSQ9a5YcaaR1lqgkNdoEMeC1Kiagz1vo2YQby\nDmbiJ26WkCUONBWMRAHpQkgnYasQKO8a85wFo/Afeai1osr1EMs".to_vec(),
+        // Device(s): DIR-885L
+        // Firmware:  DIR-885L Rev A v1.21B03
+        b"HmV3mM6LvKgme0I1ItdkG6GI6zF1z4dxB1QrUHCIiUnKDLmHe+1Z4F/GlkTtrbk4ke+WpvIIYUz2\naRNm8ctukxR8Chx4NtGsWa+i+wqeloTIefj73nDe1ZJ1GH3YlfY".to_vec(),
+        // Device(s): DAP-1720 Ax
+        // Firmware:  DAP-1720 Ax FW102b01
+        b"0F7Suq0T6zpS1oglmOWAZrtGAzhbVZ5zqBiz6o/1RVQTtJBd3FS7FDbqogE8yoBm8+xNhquuPyrT\njjSmIagnLik1G/uNmJGEfDMqWWxHCOhEqgYAooA3QPHAShwPOP5".to_vec(),
     ];
 
     let mut keys: Vec<EncimgKey> = Vec::new();
