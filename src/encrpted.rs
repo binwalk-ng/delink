@@ -2,7 +2,10 @@ use crate::aes::aes_256_cbc_decrypt_unpadded;
 use crate::common::DecryptError;
 use log::debug;
 
-/// Decrypts encrypted firmware that uses the 'encrpted_img' format, primarily the DIR-X series
+/// Decrypts encrypted firmware that uses the 'encrpted_img' format, primarily the DIR-X series.
+///
+/// Confirmed on DIR-X1560 (v1.03B02), DIR-X1870 (v1.00B05), DIR-X4860 A1 (v1.02B01),
+/// DIR-X5460 A1 (FW110B10 / v1.04B03) and DIR-LX1870 (v1.01B06).
 pub fn decrypt(encrypted_data: &[u8]) -> Result<Vec<u8>, DecryptError> {
     // Encrypted data is broken up into blocks
     const BLOCK_SIZE: usize = 131072;
