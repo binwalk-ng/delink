@@ -19,6 +19,8 @@
 //! * DAP-2682
 //! * DIR-850L A1
 //! * DIR-850L B1
+//! * DIR-880L
+//! * DIR-885L
 //! * DAP-1610 B1
 //! * DAP-1620 B1
 //! * DAP-LX1880
@@ -34,9 +36,19 @@
 //! * DIR-822
 //! * DIR-842
 //! * DIR-878
+//! * DIR-1360
+//! * DIR-816
+//! * DIR-867
+//! * DIR-882
+//! * DIR-1760
+//! * DIR-1950
+//! * DIR-1960
+//! * DIR-2660
 //! * DIR-2150
 //! * DIR-3040
 //! * DIR-3060
+//! * DWL-6620APS
+//! * DWL-7620AP
 //!
 //! Encryption keys/methods are often re-used amongst devices and firmware, so other devices may also be supported.
 //!

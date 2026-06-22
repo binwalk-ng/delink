@@ -55,6 +55,30 @@ pub fn decrypt(encrypted_image: &[u8]) -> Result<Vec<u8>, DecryptError> {
             image_sign_offset: None,
             encrypted_data_offset: 0,
         },
+        // DIR-880L Rev A v1.08b06. Pairs with the DIR-880L prog_board_fw seed;
+        // decryption verified against DIR880A1_FW108b06_beta02.bin.
+        EncimgFirmware {
+            name: "DIR-880L".to_string(),
+            image_sign: Some(b"wrgac16_dlink.2013gui_dir880".to_vec()),
+            image_sign_offset: None,
+            encrypted_data_offset: 0,
+        },
+        // DIR-885L Rev A v1.21B03. Pairs with the DIR-885L prog_board_fw seed;
+        // decryption verified against DIR885LA1_FW121b03.bin.
+        EncimgFirmware {
+            name: "DIR-885L".to_string(),
+            image_sign: Some(b"wrgac42_dlink.2015_dir885l".to_vec()),
+            image_sign_offset: None,
+            encrypted_data_offset: 0,
+        },
+        // DAP-1720 Ax FW102b01. Pairs with the DAP-1720 prog_board_fw seed;
+        // image_sign recovered from firmware, not yet verified against a sample image.
+        EncimgFirmware {
+            name: "DAP-1720".to_string(),
+            image_sign: Some(b"wapac28_dlink.2015_dap1720".to_vec()),
+            image_sign_offset: None,
+            encrypted_data_offset: 0,
+        },
         EncimgFirmware {
             name: "DIR-2610".to_string(),
             image_sign: None,

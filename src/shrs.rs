@@ -3,6 +3,12 @@ use crate::common::DecryptError;
 use log::debug;
 
 /// Decrypts SHRS firmware, used by many D-Link models.
+///
+/// Confirmed on DAP-1820 A1, DIR-816, DIR-867, DIR-878, DIR-882, DIR-1360,
+/// DIR-1760, DIR-1960, DIR-2660, and DIR-3040.
+/// The modern DIR/DAP line ships `/bin/imgdecrypt`, which stores this same AES-128
+/// key wrapped as a 48-byte blob: one AES-128-CBC block decrypt of bytes [32..48]
+/// with key = bytes [16..32] and IV = bytes [0..16] recovers the key below.
 /// Original work: <https://github.com/0xricksanchez/dlink-decrypt/blob/master/dlink-dec.py>
 pub fn decrypt(encrypted_data: &[u8]) -> Result<Vec<u8>, DecryptError> {
     // Magic bytes of the encrypted firmware
