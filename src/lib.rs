@@ -11,6 +11,7 @@
 //! * M30
 //! * M32
 //! * M60
+//! * DAP-1325
 //! * DAP-1665
 //! * DAP-1820
 //! * DAP-1955
@@ -80,6 +81,7 @@
 //! ```
 mod aes;
 pub mod common;
+pub mod dap1325;
 pub mod dap1610;
 mod decryptor;
 pub mod dlk;

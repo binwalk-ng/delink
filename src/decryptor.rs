@@ -1,4 +1,5 @@
 use crate::common::{DecryptError, DecryptorFunction};
+use crate::dap1325;
 use crate::dap1610;
 use crate::dlk;
 use crate::encimg;
@@ -17,6 +18,7 @@ pub fn decrypt(encrypted_data: &[u8]) -> Result<Vec<u8>, DecryptError> {
         ("dlk", dlk::decrypt),
         ("encimg", encimg::decrypt),
         ("tlv", tlv::decrypt),
+        ("dap1325", dap1325::decrypt),
         ("dap1610", dap1610::decrypt),
         ("encrpted_img", encrpted::decrypt),
     ];

@@ -1,7 +1,8 @@
 use crate::common::DecryptError;
 use aes::cipher::{
-    BlockModeDecrypt, KeyIvInit,
+    Array, BlockCipherDecrypt, BlockModeDecrypt, KeyInit, KeyIvInit,
     block_padding::{NoPadding, Pkcs7},
+    typenum,
 };
 use log::warn;
 
@@ -189,4 +190,58 @@ pub fn aes_256_cbc_decrypt_unpadded(
         AesKeySize::AES256,
         AesPaddingMode::NoPadding,
     )
+}
+
+/// Decrypts data using AES-128-ECB (no padding removal).
+///
+/// The input length must be a multiple of 16.
+pub fn aes_128_ecb_decrypt(encrypted_data: &[u8], key: &[u8]) -> Result<Vec<u8>, DecryptError> {
+    if !encrypted_data.len().is_multiple_of(16) {
+        return Err(DecryptError::InvalidInputLength);
+    }
+
+    let key_bytes: &[u8; 16] = key
+        .get(..16)
+        .and_then(|slice| slice.try_into().ok())
+        .ok_or(DecryptError::InvalidKeySize(key.len()))?;
+    let cipher = aes::Aes128::new(key_bytes.into());
+
+    let mut decrypted = Vec::with_capacity(encrypted_data.len());
+    for chunk in encrypted_data.chunks(16) {
+        let mut block: Array<u8, typenum::U16> = chunk
+            .try_into()
+            .map_err(|_| DecryptError::InvalidInputLength)?;
+        cipher.decrypt_block(&mut block);
+        decrypted.extend_from_slice(&block);
+    }
+
+    Ok(decrypted)
+}
+
+/// Decrypts data using AES-128-ECB, then strips PKCS7 padding.
+///
+/// The last byte of the decrypted output indicates the number of padding bytes.
+pub fn aes_128_ecb_decrypt_pkcs7(
+    encrypted_data: &[u8],
+    key: &[u8],
+) -> Result<Vec<u8>, DecryptError> {
+    let decrypted = aes_128_ecb_decrypt(encrypted_data, key)?;
+
+    // PKCS7: the last byte indicates the number of padding bytes
+    let pad_byte = *decrypted.last().ok_or(DecryptError::Decrypt)?;
+    let pad_len = pad_byte as usize;
+
+    if pad_len == 0 || pad_len > decrypted.len() || pad_len > 16 {
+        return Err(DecryptError::Decrypt);
+    }
+
+    // Verify all padding bytes match the expected value
+    if !decrypted[decrypted.len() - pad_len..]
+        .iter()
+        .all(|&b| b == pad_byte)
+    {
+        return Err(DecryptError::Decrypt);
+    }
+
+    Ok(decrypted[..decrypted.len() - pad_len].to_vec())
 }
