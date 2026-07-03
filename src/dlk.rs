@@ -113,11 +113,14 @@ pub fn decrypt(encrypted_data: &[u8]) -> Result<Vec<u8>, DecryptError> {
 
                         // Loop through each encrypted block
                         for block in block_data.chunks(block_size) {
+                            // A block consists of a 16-byte IV followed by the encrypted data;
+                            // hence a valid block must have more than 16 bytes in it.
                             if block.len() <= IV_SIZE {
                                 warn!("Block is too small");
                                 break;
                             }
 
+                            // Separate out the IV from the encrypted block data
                             let iv = &block[0..IV_SIZE];
                             let encrypted_block = &block[IV_SIZE..];
 
