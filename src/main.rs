@@ -40,17 +40,20 @@ fn main() -> Result<(), ApplicationError> {
                 trace!("Attempting to decrypt data from: {}", input_file_name);
 
                 // Try all decryption methods
-                if let Ok(decrypted_data) = delink::decrypt(&file_data) {
-                    info!("Decryption successful!");
-                    if write_decrypted_data(&output_file_name, &decrypted_data) {
-                        Ok(())
-                    } else {
-                        Err(ApplicationError::WriteFail)
-                    }
-                } else {
-                    error!("All decryption attempts have failed :(");
-                    Err(ApplicationError::DecryptFail)
-                }
+                delink::decrypt(&file_data).map_or_else(
+                    |_| {
+                        error!("All decryption attempts have failed :(");
+                        Err(ApplicationError::DecryptFail)
+                    },
+                    |decrypted_data| {
+                        info!("Decryption successful!");
+                        if write_decrypted_data(&output_file_name, &decrypted_data) {
+                            Ok(())
+                        } else {
+                            Err(ApplicationError::WriteFail)
+                        }
+                    },
+                )
             }
         }
     } else {

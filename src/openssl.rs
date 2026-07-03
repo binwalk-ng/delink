@@ -1,6 +1,7 @@
 use crate::aes;
 use crate::common::DecryptError;
 use log::warn;
+use md5::Md5;
 use sha2::Digest;
 
 /// The type of hash to use when generating a key/iv pair from a passphrase
@@ -30,7 +31,7 @@ fn sha256_digest(data: &[u8]) -> Vec<u8> {
 
 /// Returns the MD5 hash of the provided data
 fn md5_digest(data: &[u8]) -> Vec<u8> {
-    md5::compute(data).to_vec()
+    Md5::digest(data).to_vec()
 }
 
 /// Returns the request hash of the provided data
@@ -55,9 +56,7 @@ fn derive_key_iv(
     let mut hash: Vec<u8>;
     let mut key_material: Vec<u8>;
     let mut pass_salt: Vec<u8> = Vec::new();
-    let mut crypt_info = OpenSSLCryptInfo {
-        ..Default::default()
-    };
+    let mut crypt_info = OpenSSLCryptInfo::default();
 
     // Concatenate password and salt
     pass_salt.extend(password.bytes());
