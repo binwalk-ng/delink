@@ -2,10 +2,11 @@ use crate::aes::aes_128_ecb_decrypt_pkcs7;
 use crate::common::DecryptError;
 use log::debug;
 
-/// Decrypt DAP-1325 A1 and DAP-1610 B1 (v1.03+) firmware.
+/// Decrypt DAP-1325 A1 and DAP-1610 A1 firmware.
 ///
-/// These devices use AES-128-ECB with a hardcoded key.
+/// Uses AES-128-ECB with a hardcoded key.
 /// The first 0x40 bytes are a plaintext header; the rest is encrypted.
+/// The decrypted payload is a u-boot legacy uImage.
 pub fn decrypt(encrypted_data: &[u8]) -> Result<Vec<u8>, DecryptError> {
     const HEADER_SIZE: usize = 0x40;
 
@@ -13,8 +14,8 @@ pub fn decrypt(encrypted_data: &[u8]) -> Result<Vec<u8>, DecryptError> {
 
     const MAGIC_START: usize = 0;
 
-    const DECRYPTED_MAGIC: &[u8] = b"ustar";
-    const DECRYPTED_MAGIC_START: usize = 0x101;
+    const DECRYPTED_MAGIC: &[u8] = b"\x27\x05\x19\x56";
+    const DECRYPTED_MAGIC_START: usize = 0x00;
 
     if encrypted_data.len() <= HEADER_SIZE {
         debug!("Data too small for DAP-1325 header");
@@ -53,7 +54,10 @@ pub fn decrypt(encrypted_data: &[u8]) -> Result<Vec<u8>, DecryptError> {
                     result.extend_from_slice(&decrypted_body);
                     Ok(result)
                 } else {
-                    debug!("Decrypted magic bytes do not match ustar");
+                    debug!(
+                        "Decrypted magic bytes do not match u-boot image header {:?}",
+                        decrypted_magic
+                    );
                     Err(DecryptError::Output)
                 }
             } else {
