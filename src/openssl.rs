@@ -11,24 +11,41 @@ pub enum MessageDigest {
     SHA256,
 }
 
-#[derive(Clone, Default, Debug)]
+impl MessageDigest {
+    const fn size(&self) -> usize {
+        match self {
+            MessageDigest::MD5 => 16,
+            MessageDigest::SHA256 => 32,
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
 struct OpenSSLCryptInfo {
     iv: Vec<u8>,
     key: Vec<u8>,
 }
 
-/// Returns the SHA256 hash of the provided data
-fn sha256_digest(data: &[u8]) -> Vec<u8> {
-    sha2::Sha256::digest(data).to_vec()
+/// Returns the SHA256 hash of the provided data as if it were all concatenated
+fn sha256_digest(data: &[&[u8]]) -> Vec<u8> {
+    let mut digest = sha2::Sha256::new();
+    for &item in data {
+        digest.update(item);
+    }
+    digest.finalize().to_vec()
 }
 
-/// Returns the MD5 hash of the provided data
-fn md5_digest(data: &[u8]) -> Vec<u8> {
-    Md5::digest(data).to_vec()
+/// Returns the MD5 hash of the provided data as if it were all concatenated
+fn md5_digest(data: &[&[u8]]) -> Vec<u8> {
+    let mut digest = Md5::new();
+    for &item in data {
+        digest.update(item);
+    }
+    digest.finalize().to_vec()
 }
 
-/// Returns the request hash of the provided data
-fn digest(data: &[u8], hash_type: &MessageDigest) -> Vec<u8> {
+/// Returns the request hash of the provided data, as if it were all concatenated
+fn digest(data: &[&[u8]], hash_type: &MessageDigest) -> Vec<u8> {
     match hash_type {
         MessageDigest::MD5 => md5_digest(data),
         MessageDigest::SHA256 => sha256_digest(data),
@@ -44,40 +61,43 @@ fn derive_key_iv(
 ) -> OpenSSLCryptInfo {
     const IV_LEN: usize = 16;
     const KEY_LEN: usize = 32;
-    const TOTAL_LEN: usize = IV_LEN + KEY_LEN;
-
-    let pass_salt: Vec<u8> = [password.as_bytes(), salt].concat();
-    let mut crypt_info = OpenSSLCryptInfo::default();
 
     // Generate a hash of the password + salt
-    let mut hash = digest(&pass_salt, &hash_type);
-    let mut key_material = Vec::with_capacity(TOTAL_LEN);
-    key_material.extend_from_slice(&hash);
+    let mut hash = digest(&[password.as_bytes(), salt], &hash_type);
 
-    // Loop until dtot is the length of the key + length of the iv
-    while key_material.len() < TOTAL_LEN {
-        // Input to this hash calculation is the last hash computed + password + salt
-        let hash_input: Vec<u8> = [&hash[..], &pass_salt[..]].concat();
+    // Because KEY_LEN is evenly divisible by 16 (md5 size) and 32 (sha256 size), this won't lose
+    // any key material, if we need to continue generating key material for the IV
+    const {
+        assert!(KEY_LEN.is_multiple_of(MessageDigest::MD5.size()));
+        assert!(KEY_LEN.is_multiple_of(MessageDigest::SHA256.size()));
+    }
+    let key = generate_key_material(&mut hash, password.as_bytes(), salt, KEY_LEN, &hash_type);
+
+    let iv = match iv {
+        Some(user_iv) => user_iv.to_vec(),
+        None => generate_key_material(&mut hash, password.as_bytes(), salt, IV_LEN, &hash_type),
+    };
+    OpenSSLCryptInfo { key, iv }
+}
+
+fn generate_key_material(
+    hash: &mut Vec<u8>,
+    password: &[u8],
+    salt: &[u8],
+    required_len: usize,
+    hash_type: &MessageDigest,
+) -> Vec<u8> {
+    let mut dst = Vec::with_capacity(required_len);
+
+    while dst.len() < required_len {
+        // Append the most recently calculated hash to key_material
+        dst.extend_from_slice(hash);
 
         // Create a new hash from the last hash + password + salt
-        hash = digest(&hash_input, &hash_type);
-
-        // Append the most recently calcualted hash to key_material
-        key_material.extend_from_slice(&hash);
+        *hash = digest(&[hash.as_slice(), password, salt], hash_type);
     }
-
-    crypt_info.key = key_material[0..KEY_LEN].to_vec();
-
-    match iv {
-        None => {
-            crypt_info.iv = key_material[KEY_LEN..TOTAL_LEN].to_vec();
-        }
-        Some(user_supplied_iv) => {
-            crypt_info.iv = user_supplied_iv.to_vec();
-        }
-    }
-
-    crypt_info
+    dst.truncate(required_len);
+    dst
 }
 
 /// Decrypts an OpenSSL encrypted file
