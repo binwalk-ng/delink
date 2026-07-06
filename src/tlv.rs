@@ -64,20 +64,11 @@ fn keygen(firmware_header: &[u8]) -> String {
     let board_id = get_cstring(&firmware_header[BOARD_ID_START..BOARD_ID_END]);
     let model_name = get_cstring(&firmware_header[MODEL_NAME_START..MODEL_NAME_END]);
 
-    sha1_hmac_string(&board_id, &model_name)
+    sha1_hmac_string(board_id, model_name)
 }
 
 /// Read bytes from data until a NULL byte is found
-fn get_cstring(data: &[u8]) -> Vec<u8> {
-    let mut cstring: Vec<u8> = Vec::new();
-
-    for b in data {
-        if *b == 0 {
-            break;
-        } else {
-            cstring.push(*b);
-        }
-    }
-
-    cstring
+fn get_cstring(data: &[u8]) -> &[u8] {
+    let len = data.iter().position(|&b| b == b'\0').unwrap_or(data.len());
+    &data[..len]
 }
