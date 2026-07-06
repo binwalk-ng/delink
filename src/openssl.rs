@@ -46,32 +46,24 @@ fn derive_key_iv(
     const KEY_LEN: usize = 32;
     const TOTAL_LEN: usize = IV_LEN + KEY_LEN;
 
-    let mut hash: Vec<u8>;
-    let mut key_material: Vec<u8>;
-    let mut pass_salt: Vec<u8> = Vec::new();
+    let pass_salt: Vec<u8> = [password.as_bytes(), salt].concat();
     let mut crypt_info = OpenSSLCryptInfo::default();
 
-    // Concatenate password and salt
-    pass_salt.extend(password.bytes());
-    pass_salt.extend(salt);
-
     // Generate a hash of the password + salt
-    hash = digest(&pass_salt, &hash_type);
-    key_material = hash.clone();
+    let mut hash = digest(&pass_salt, &hash_type);
+    let mut key_material = Vec::with_capacity(TOTAL_LEN);
+    key_material.extend_from_slice(&hash);
 
     // Loop until dtot is the length of the key + length of the iv
     while key_material.len() < TOTAL_LEN {
-        let mut hash_input: Vec<u8> = Vec::new();
-
         // Input to this hash calculation is the last hash computed + password + salt
-        hash_input.extend(hash);
-        hash_input.extend(pass_salt.clone());
+        let hash_input: Vec<u8> = [&hash[..], &pass_salt[..]].concat();
 
         // Create a new hash from the last hash + password + salt
         hash = digest(&hash_input, &hash_type);
 
         // Append the most recently calcualted hash to key_material
-        key_material.extend(hash.clone());
+        key_material.extend_from_slice(&hash);
     }
 
     crypt_info.key = key_material[0..KEY_LEN].to_vec();
