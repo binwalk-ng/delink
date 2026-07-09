@@ -11,24 +11,41 @@ pub enum MessageDigest {
     SHA256,
 }
 
-#[derive(Clone, Default, Debug)]
+impl MessageDigest {
+    const fn size(&self) -> usize {
+        match self {
+            MessageDigest::MD5 => 16,
+            MessageDigest::SHA256 => 32,
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
 struct OpenSSLCryptInfo {
     iv: Vec<u8>,
     key: Vec<u8>,
 }
 
-/// Returns the SHA256 hash of the provided data
-fn sha256_digest(data: &[u8]) -> Vec<u8> {
-    sha2::Sha256::digest(data).to_vec()
+/// Returns the SHA256 hash of the provided data as if it were all concatenated
+fn sha256_digest(data: &[&[u8]]) -> Vec<u8> {
+    let mut digest = sha2::Sha256::new();
+    for &item in data {
+        digest.update(item);
+    }
+    digest.finalize().to_vec()
 }
 
-/// Returns the MD5 hash of the provided data
-fn md5_digest(data: &[u8]) -> Vec<u8> {
-    Md5::digest(data).to_vec()
+/// Returns the MD5 hash of the provided data as if it were all concatenated
+fn md5_digest(data: &[&[u8]]) -> Vec<u8> {
+    let mut digest = Md5::new();
+    for &item in data {
+        digest.update(item);
+    }
+    digest.finalize().to_vec()
 }
 
-/// Returns the request hash of the provided data
-fn digest(data: &[u8], hash_type: &MessageDigest) -> Vec<u8> {
+/// Returns the request hash of the provided data, as if it were all concatenated
+fn digest(data: &[&[u8]], hash_type: &MessageDigest) -> Vec<u8> {
     match hash_type {
         MessageDigest::MD5 => md5_digest(data),
         MessageDigest::SHA256 => sha256_digest(data),
@@ -44,48 +61,56 @@ fn derive_key_iv(
 ) -> OpenSSLCryptInfo {
     const IV_LEN: usize = 16;
     const KEY_LEN: usize = 32;
-    const TOTAL_LEN: usize = IV_LEN + KEY_LEN;
-
-    let mut hash: Vec<u8>;
-    let mut key_material: Vec<u8>;
-    let mut pass_salt: Vec<u8> = Vec::new();
-    let mut crypt_info = OpenSSLCryptInfo::default();
-
-    // Concatenate password and salt
-    pass_salt.extend(password.bytes());
-    pass_salt.extend(salt);
 
     // Generate a hash of the password + salt
-    hash = digest(&pass_salt, &hash_type);
-    key_material = hash.clone();
+    let mut hash = digest(&[password.as_bytes(), salt], &hash_type);
 
-    // Loop until dtot is the length of the key + length of the iv
-    while key_material.len() < TOTAL_LEN {
-        let mut hash_input: Vec<u8> = Vec::new();
-
-        // Input to this hash calculation is the last hash computed + password + salt
-        hash_input.extend(hash);
-        hash_input.extend(pass_salt.clone());
-
-        // Create a new hash from the last hash + password + salt
-        hash = digest(&hash_input, &hash_type);
-
-        // Append the most recently calcualted hash to key_material
-        key_material.extend(hash.clone());
+    // Because KEY_LEN is evenly divisible by 16 (md5 size) and 32 (sha256 size), this won't lose
+    // any key material, if we need to continue generating key material for the IV
+    const {
+        assert!(KEY_LEN.is_multiple_of(MessageDigest::MD5.size()));
+        assert!(KEY_LEN.is_multiple_of(MessageDigest::SHA256.size()));
     }
+    let mut key = [0; KEY_LEN];
+    let (first, rest) = key.split_at_mut(hash.len());
+    first.copy_from_slice(&hash);
 
-    crypt_info.key = key_material[0..KEY_LEN].to_vec();
+    generate_key_material(&mut hash, password.as_bytes(), salt, &hash_type, rest);
 
-    match iv {
+    let iv = match iv {
+        Some(user_iv) => user_iv.to_vec(),
         None => {
-            crypt_info.iv = key_material[KEY_LEN..TOTAL_LEN].to_vec();
+            let mut iv = [0; IV_LEN];
+            generate_key_material(&mut hash, password.as_bytes(), salt, &hash_type, &mut iv);
+            iv.to_vec()
         }
-        Some(user_supplied_iv) => {
-            crypt_info.iv = user_supplied_iv.to_vec();
-        }
+    };
+    OpenSSLCryptInfo {
+        key: key.to_vec(),
+        iv,
     }
+}
 
-    crypt_info
+fn generate_key_material(
+    hash: &mut Vec<u8>,
+    password: &[u8],
+    salt: &[u8],
+    hash_type: &MessageDigest,
+    dst: &mut [u8],
+) {
+    debug_assert_eq!(hash_type.size(), hash.len());
+    let mut chunks = dst.chunks_exact_mut(hash_type.size());
+    for chunk in &mut chunks {
+        // Create a new hash from the last hash + password + salt
+        *hash = digest(&[hash.as_slice(), password, salt], hash_type);
+        // Append the most recently calculated hash to key_material
+        chunk.copy_from_slice(hash);
+    }
+    let remainder = chunks.into_remainder();
+    if !remainder.is_empty() {
+        *hash = digest(&[hash.as_slice(), password, salt], hash_type);
+        remainder.copy_from_slice(&hash[..remainder.len()]);
+    }
 }
 
 /// Decrypts an OpenSSL encrypted file
