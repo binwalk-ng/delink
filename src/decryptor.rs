@@ -5,6 +5,7 @@ use crate::dlk;
 use crate::encimg;
 use crate::encrpted;
 use crate::mh01;
+use crate::r95;
 use crate::shrs;
 use crate::tlv;
 use log::trace;
@@ -13,6 +14,7 @@ use log::trace;
 pub fn decrypt(encrypted_data: &[u8]) -> Result<Vec<u8>, DecryptError> {
     // List of supported decryptors
     const DECRYPTORS: &[(&str, DecryptorFunction)] = &[
+        ("r95", r95::decrypt),
         ("shrs", shrs::decrypt),
         ("mh01", mh01::decrypt),
         ("dlk", dlk::decrypt),

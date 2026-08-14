@@ -7,10 +7,14 @@
 //! * R12
 //! * R15
 //! * R18
+//! * R36
+//! * R95
 //! * M18
 //! * M30
 //! * M32
+//! * M36
 //! * M60
+//! * M95
 //! * DAP-1325
 //! * DAP-1665
 //! * DAP-1820
@@ -89,6 +93,7 @@ pub mod encimg;
 pub mod encrpted;
 pub mod mh01;
 mod openssl;
+pub mod r95;
 pub mod sha1_hmac;
 pub mod shrs;
 pub mod tlv;
